@@ -1,5 +1,5 @@
 python-telegram-bot[ext]
-flask
+flask[async]
 python-dotenv
 gtts
 groq
