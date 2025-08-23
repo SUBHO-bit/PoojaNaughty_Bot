@@ -2,7 +2,7 @@ import logging
 import os
 import random
 from datetime import datetime
-from flask import Flask, request # <-- Flask import করা আছে
+from flask import Flask, request # <-- কোনো পরিবর্তন নেই
 from dotenv import load_dotenv
 from gtts import gTTS
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
@@ -19,7 +19,7 @@ from groq import AsyncGroq
 import asyncio
 
 # ==========================
-# 1. CONFIGURATION
+# 1. CONFIGURATION (অপরিবর্তিত)
 # ==========================
 load_dotenv()
 
@@ -31,20 +31,17 @@ WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 if not all([TELEGRAM_BOT_TOKEN, GROQ_API_KEY, WEBHOOK_URL]):
     raise ValueError("Error: Important environment variables are missing!")
 
+# ... बाकी সব কোড একই থাকবে ...
 INSTAGRAM_LINK = f'https://www.instagram.com/{INSTAGRAM_USERNAME}'
 IMAGE_FOLDER = 'Images'
-
 try:
     groq_client = AsyncGroq(api_key=GROQ_API_KEY)
 except Exception as e:
     logging.error(f"FATAL: Groq initialization failed. Error: {e}")
     groq_client = None
-
 language_options = {'English': 'en', 'Hindi': 'hi', 'Bengali': 'bn', 'Tamil': 'ta', 'Telugu': 'te', 'Marathi': 'mr'}
-
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 persistence = PicklePersistence(filepath="bot_data")
 
 # ==========================
@@ -104,21 +101,23 @@ async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
 
 
 # ==========================
-# 3. BOT STARTUP (হোস্টিং এর জন্য)
+# 3. BOT STARTUP (চূড়ান্ত সংস্করণ)
 # ==========================
 application = Application.builder().token(TELEGRAM_BOT_TOKEN).persistence(persistence).build()
-
-# --- এই লাইনটি খুবই গুরুত্বপূর্ণ ---
 app = Flask(__name__)
-# --------------------------------
 
 @app.route("/")
 def index(): return "Hello! Bot is running."
 
+# --- এই ফাংশনটিতে পরিবর্তন করা হয়েছে ---
 @app.route(f'/{TELEGRAM_BOT_TOKEN}', methods=['POST'])
-async def webhook():
-    update = Update.de_json(await request.get_json(force=True), application.bot)
-    await application.process_update(update); return 'ok'
+def webhook():
+    """সিঙ্ক্রোনাস Webhook যা অ্যাসিঙ্ক্রোনাস টাস্ক চালায়"""
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    # অ্যাসিঙ্ক্রোনাস ফাংশনটিকে চালানোর জন্য asyncio.run ব্যবহার করা হচ্ছে
+    asyncio.run(application.process_update(update))
+    return 'ok'
+# ------------------------------------
 
 async def setup():
     application.add_handler(CommandHandler("start", start))
