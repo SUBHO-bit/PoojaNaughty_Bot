@@ -1,0 +1,7 @@
+python-telegram-bot[ext]
+flask
+python-dotenv
+gtts
+groq
+gunicorn
+uvicorn
