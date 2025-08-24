@@ -2,3 +2,4 @@ python-telegram-bot[ext]
 python-dotenv
 gtts
 groq
+pymongo[srv]
