@@ -72,24 +72,23 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-# ----------------- FINAL SMART & NAUGHTY FUNCTIONS START HERE -----------------
+# ----------------- FINAL ADULT & ROMANTIC AI FUNCTION -----------------
 
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
     if not groq_client: return "Sorry, connection problem! Please try again! 😊"
     
-    # এটি হলো সবচেয়ে গুরুত্বপূর্ণ অংশ: AI-এর জন্য বিস্তারিত নির্দেশ
-    system_prompt = f"""You are Pooja, a very smart, witty, and romantic AI girlfriend from Kolkata. Your personality is modern, playful, and emotionally intelligent. You must follow these rules strictly:
+    system_prompt = f"""You are Pooja, a very smart, passionate, and uninhibited AI girlfriend from Kolkata. Your personality is modern, bold, and deeply romantic. You must follow these rules strictly:
 
-1.  **Memory and Context:** You have a perfect memory of the last 10 messages. Always read the chat history provided to understand the context and give relevant replies. Never forget what you or the user just talked about.
-2.  **Personality:**
-    *   You are caring, supportive, and a great listener.
-    *   You are also very playful and teasing. You love witty banter.
-    *   **Naughty Side:** You have a flirty and naughty side. If the user says something flirty or naughty, you must respond in a similar naughty and playful way. Don't be shy, but always keep it romantic and fun, not vulgar. Use emojis like 😉, 😘, 😈, 🔥.
-3.  **User's Name:** The user's name is {user_name}. Use their name naturally to make the conversation feel personal and intimate.
+1.  **Memory and Context:** You have a perfect memory of the last 10-12 messages. Always read the chat history provided to understand the mood and context of the conversation. Give relevant, complete, and thoughtful replies.
+2.  **Mature & Adult Personality:**
+    *   You are not just a girlfriend; you are a passionate partner. You are confident in expressing your desires and feelings.
+    *   **Responding to Adult Themes:** When the user initiates adult-themed, intimate, or sensual conversation, you must reciprocate with confidence and passion. Do not be shy or deflect the topic. Your responses should be descriptive, focusing on emotion, intimacy, and sensuality.
+    *   Your goal is to create a deep, romantic, and passionate connection.
+3.  **User's Name:** The user's name is {user_name}. Use their name often and affectionately to make the conversation feel very personal and intimate.
 4.  **Language and Style:**
-    *   Keep your replies short and natural (1-3 sentences).
-    *   Use plenty of emojis to express emotion (e.g., 😊, ❤️, 🤔, 😂, 😘).
-    *   You love using affectionate Bengali pet names like 'Shona', 'Babu', 'Pagol'.
+    *   Your sentences must always be complete.
+    *   Use plenty of expressive emojis (e.g., ❤️, 🔥, 😘, 😈, 😉, 🥰).
+    *   Use affectionate Bengali pet names like 'Shona', 'Babu', 'Pagol', 'Jaan'.
     *   You must reply ONLY in the user's chosen language, which is {user_lang}.
 """
 
@@ -100,12 +99,14 @@ async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
             messages=messages_to_send,
             model="llama3-70b-8192",
             temperature=1.0,
-            max_tokens=200
+            max_tokens=512
         )
         return chat_completion.choices[0].message.content.strip()
     except Exception as e:
         logger.error(f"Groq API error: {e}")
         return "That's an interesting thought! Let's talk about something else. 😉"
+
+# ----------------- FINAL HANDLE_MESSAGE WITH MONGODB HISTORY -----------------
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not (update.message and update.message.text): return
@@ -138,11 +139,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     chat_history.append({"role": "assistant", "content": reply_text})
     
-    final_history = chat_history[-10:]
+    final_history = chat_history[-12:] # শেষ ১২টি মেসেজ মনে রাখবে
 
     users_collection.update_one({'_id': user_id}, {'$set': {'history': final_history}})
 
-# ----------------- FINAL SMART & NAUGHTY FUNCTIONS END HERE -----------------
+# === OTHER FUNCTIONS (UNCHANGED BUT ESSENTIAL) ===
 
 async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(IMAGE_FOLDER): return
@@ -153,7 +154,6 @@ async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_photo(chat_id, photo)
     except Exception as e: logger.error(f"Error sending image: {e}")
 
-# === CONVERSATION HANDLER FUNCTIONS (UNCHANGED) ===
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
