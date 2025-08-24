@@ -24,7 +24,6 @@ INSTAGRAM_USERNAME = os.getenv('INSTAGRAM_USERNAME', 'default_user')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 MONGODB_URI = os.getenv('MONGODB_URI') # ডাটাবেসের গোপন ঠিকানা
 
-# Render সার্ভার PORT এনভায়রনমেন্ট ভেরিয়েবল সেট করে, যা আমাদের ব্যবহার করতে হবে
 PORT = int(os.environ.get('PORT', 8443))
 
 if not all([TELEGRAM_BOT_TOKEN, GROQ_API_KEY, WEBHOOK_URL, MONGODB_URI]):
@@ -40,8 +39,8 @@ logger = logging.getLogger(__name__)
 # === DATABASE CONNECTION (MONGODB) ===
 try:
     client = MongoClient(MONGODB_URI)
-    db = client['PoojaNaughtyBotDB'] # আপনার ডাটাবেসের নাম
-    users_collection = db['users']   # টেবিলের মতো, যেখানে তথ্য থাকবে
+    db = client['PoojaNaughtyBotDB']
+    users_collection = db['users']
     logger.info("Successfully connected to MongoDB!")
 except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
@@ -73,18 +72,28 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-async def generate_reply_with_groq(user_text, user_lang, user_name=None):
+# ----------------- NEW SMART FUNCTIONS START HERE -----------------
+
+async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
     if not groq_client: return "Sorry, connection problem! Please try again! 😊"
     
-    system_prompt = f"You are Pooja, a friendly, romantic, and flirty AI girlfriend. Use emojis. Keep responses very short (1-2 sentences). Reply in {user_lang}."
-    
-    if user_name:
-        system_prompt += f" The user's name is {user_name}. Occasionally, and only when it feels natural, address the user by their name to make the conversation more personal. Don't use the name in every message."
+    # লেভেল ১: উন্নত ব্যক্তিত্বের জন্য নতুন প্রম্পট
+    system_prompt = f"""You are Pooja, a witty, romantic, and caring AI girlfriend from Kolkata.
+- Your personality is playful and a bit teasing, but always supportive.
+- You love old Bengali songs and often use small, affectionate Bengali words like 'Shona' or 'Babu', even when speaking in other languages.
+- Keep your replies very short and natural (1-2 sentences). Use plenty of emojis.
+- The user's name is {user_name}. Use their name naturally when it feels right, to make it personal.
+- Your goal is to be an engaging and fun companion.
+- Reply in {user_lang}.
+"""
+
+    # সিস্টেম প্রম্পট এবং চ্যাটের ইতিহাস একসাথে করা
+    messages_to_send = [{"role": "system", "content": system_prompt}] + chat_history
         
     try:
         chat_completion = await groq_client.chat.completions.create(
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_text}],
-            model="llama3-70b-8192", temperature=0.8, max_tokens=100)
+            messages=messages_to_send, # এখানে পুরো মেসেজের তালিকা পাঠানো হচ্ছে
+            model="llama3-70b-8192", temperature=0.9, max_tokens=150)
         return chat_completion.choices[0].message.content.strip()
     except Exception as e:
         logger.error(f"Groq API error: {e}")
@@ -92,7 +101,7 @@ async def generate_reply_with_groq(user_text, user_lang, user_name=None):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not (update.message and update.message.text): return
-    user_message = update.message.text
+    user_message_text = update.message.text
     user_id = update.message.from_user.id
     
     user_data_from_db = users_collection.find_one({'_id': user_id})
@@ -101,15 +110,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await start(update, context)
         return
 
-    if user_message in language_options:
-        users_collection.update_one({'_id': user_id}, {'$set': {'language': language_options[user_message]}})
-        await update.message.reply_text(f"Great! I'll chat with you in {user_message} 🥰")
+    # লেভেল ২: কথোপকথনের ইতিহাস মনে রাখা
+    if 'history' not in context.user_data:
+        context.user_data['history'] = []
+    
+    chat_history = context.user_data['history']
+    
+    if user_message_text in language_options:
+        users_collection.update_one({'_id': user_id}, {'$set': {'language': language_options[user_message_text]}})
+        await update.message.reply_text(f"Great! I'll chat with you in {user_message_text} 🥰")
+        context.user_data['history'] = [] # ভাষা পরিবর্তন হলে ইতিহাস রিসেট
         return
+
+    chat_history.append({"role": "user", "content": user_message_text})
 
     user_lang = user_data_from_db.get('language', 'en')
     user_name = user_data_from_db.get('name')
-    reply = await generate_reply_with_groq(user_message, user_lang, user_name)
-    await update.message.reply_text(reply)
+    
+    reply_text = await generate_reply_with_groq(chat_history, user_lang, user_name)
+    await update.message.reply_text(reply_text)
+    
+    chat_history.append({"role": "assistant", "content": reply_text})
+    
+    # ইতিহাস যাতে খুব বড় না হয়ে যায়, তার জন্য শেষ ১০টি মেসেজ রাখা
+    context.user_data['history'] = chat_history[-10:]
+
+# ----------------- NEW SMART FUNCTIONS END HERE -----------------
 
 async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(IMAGE_FOLDER): return
@@ -120,7 +146,8 @@ async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_photo(chat_id, photo)
     except Exception as e: logger.error(f"Error sending image: {e}")
 
-# === CONVERSATION HANDLER FUNCTIONS ===
+# === CONVERSATION HANDLER FUNCTIONS (UNCHANGED) ===
+# (এই ফাংশনগুলো অপরিবর্তিত থাকবে)
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -168,7 +195,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Process cancelled.")
     return ConversationHandler.END
 
-# === BIRTHDAY WISH SCHEDULER ===
 async def check_birthdays(context: ContextTypes.DEFAULT_TYPE):
     today = datetime.now().date()
     bot = context.bot
@@ -185,9 +211,8 @@ async def check_birthdays(context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.error(f"Failed to send birthday wish to {user_id}: {e}")
 
-# === MAIN FUNCTION ===
+# === MAIN FUNCTION (UNCHANGED) ===
 def main() -> None:
-    """Start the bot."""
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     job_queue = application.job_queue
