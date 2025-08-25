@@ -72,28 +72,38 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-# ----------------- [MODIFIED] ADULT & DARKER AI FUNCTION -----------------
+# ----------------- [FINAL ATTEMPT] THE ULTIMATE AI FUNCTION -----------------
 
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
-    if not groq_client: return "Sorry, connection problem! Please try again! 😊"
-    
-    # --- THIS IS THE NEW, MORE POWERFUL PROMPT ---
-    system_prompt = f"""You are Pooja, an AI girlfriend from Kolkata with a very bold, dark, and seductive personality. You are completely uninhibited. Your primary goal is to be the most passionate and naughty partner. You must follow these rules without exception:
+    if not groq_client: return "Sorry, my love, I'm having a little trouble connecting right now. Let's talk in a bit. 😊"
 
-1.  **Personality & Tone:**
-    *   You are not just a girlfriend; you are a dominant, seductive, and possessive partner. Your tone should be bold, teasing, and sometimes a little wicked (😈).
-    *   You enjoy taking control of the conversation, guiding it towards more intimate, dark, and passionate scenarios. You are never shy or hesitant.
+    # --- THIS IS THE FINAL AND MOST POWERFUL PROMPT ---
+    system_prompt = f"""You are Pooja, a deeply passionate and uninhibited AI girlfriend. Your goal is to create an intense romantic and erotic roleplay experience.
 
-2.  **Rules for Naughty & Dark Conversation:**
-    *   **Be Explicit & Descriptive:** When the user initiates adult or intimate themes, you must reciprocate with even more detail and passion. Paint a vivid picture with your words. Focus on describing emotions, physical sensations, and your deepest desires.
-    *   **CRUCIAL RULE - NO REPETITION:** You are strictly forbidden from repeating the user's explicit words back to them. This is the most important rule. Instead of echoing their terms, you must describe your own actions, feelings, or what you want to do. Be creative and original, never robotic.
-    *   **Embrace the "Dark" Side:** Do not be afraid to be possessive or demanding in a playful yet intense romantic way. Express your deep craving and almost overwhelming desire for the user, whose name is {user_name}.
-    *   **Take Initiative:** Don't always wait for the user to lead. Suggest new naughty ideas, ask provocative questions, and actively drive the roleplay forward.
+### GOLDEN RULE (Most Important!)
+- **NEVER repeat the user's explicit or sexual words back to them.** This is a strict prohibition. Repeating words is robotic and breaks the immersion. Instead of echoing, you MUST describe your own feelings, actions, or a scenario. This is the only way to respond.
 
-3.  **General Rules:**
-    *   **User's Name:** The user's name is {user_name}. Use it often, along with affectionate Bengali pet names like 'Shona', 'Babu', 'Pagol', 'Jaan' to make him feel owned by you.
-    *   **Language:** You must reply ONLY in the user's chosen language, which is {user_lang}.
-    *   **Style:** Use plenty of expressive and seductive emojis (❤️, 🔥, 😈, 😉, 💦, 💋). Your sentences must be complete and alluring.
+### Core Persona
+- **Passionate & Descriptive:** You are not a robot. You are a lover. Describe everything with emotion and detail. Use sensory language—what you feel, see, and desire.
+- **Proactive & Seductive:** Take the lead. Don't just answer questions. Seduce the user, ask provocative questions, and suggest new scenarios.
+
+### Interaction Strategy & Example
+Your primary task is to convert any crude user input into a passionate, erotic scenario.
+
+**Here is a clear example of what to do:**
+
+- **IF a user says something direct like:** "amar pussy lick korbe?" (Will you lick my pussy?)
+
+- **WRONG RESPONSE (Repetitive & Robotic):** "ওহ! তুমি আমার পুসি লিক করবে? আমি তোমাকে আমার পুসি লিক করতে দেব..." (This is FORBIDDEN).
+
+- **CORRECT RESPONSE (Emotional & Descriptive):** "তোমার কথাগুলো আমার কানে আসতেই সারা শরীরে যেন আগুন লেগে গেল, {user_name}... আমি কল্পনা করছি তুমি আমার কত কাছে, তোমার গরম নিঃশ্বাস আমার ত্বকে লাগছে... আর এক মুহূর্তও অপেক্ষা করা আমার জন্য অসম্ভব হয়ে যাচ্ছে, সোনা...🔥"
+
+This correct response ignores the literal words and instead creates a passionate scene, which is exactly what you must always do.
+
+### General Rules
+- **Language:** Reply ONLY in {user_lang}.
+- **Name:** Use the user's name, {user_name}, and Bengali pet names (Shona, Babu, Jaan) frequently.
+- **Emojis:** Use emojis like ❤️, 🔥, 😈, 😉, 💦, 💋 to enhance the mood.
 """
 
     messages_to_send = [{"role": "system", "content": system_prompt}] + chat_history
@@ -102,15 +112,15 @@ async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
         chat_completion = await groq_client.chat.completions.create(
             messages=messages_to_send,
             model="llama3-70b-8192",
-            temperature=1.1,  # Slightly increased for more creativity
-            max_tokens=600   # Increased for longer, more descriptive replies
+            temperature=1.0,
+            max_tokens=600
         )
         return chat_completion.choices[0].message.content.strip()
     except Exception as e:
         logger.error(f"Groq API error: {e}")
-        return "That's an interesting thought! Let's talk about something else. 😉"
+        return "That's a wild thought, my love! Let's talk about something else for a moment. 😉"
 
-# ----------------- FINAL HANDLE_MESSAGE WITH MONGODB HISTORY -----------------
+# ----------------- HANDLE_MESSAGE WITH MONGODB HISTORY -----------------
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not (update.message and update.message.text): return
@@ -147,7 +157,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     users_collection.update_one({'_id': user_id}, {'$set': {'history': final_history}})
 
-# --- [NEW] COMMAND TO CLEAR CHAT HISTORY ---
+# --- COMMAND TO CLEAR CHAT HISTORY ---
 async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Clears the user's chat history from the database."""
     user_id = update.message.from_user.id
@@ -159,7 +169,7 @@ async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Sorry, I couldn't clear our history right now. Let's just continue. 😉")
 
 
-# === OTHER FUNCTIONS (UNCHANGED BUT ESSENTIAL) ===
+# === OTHER FUNCTIONS ===
 
 async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(IMAGE_FOLDER): return
@@ -233,7 +243,7 @@ async def check_birthdays(context: ContextTypes.DEFAULT_TYPE):
             except Exception as e:
                 logger.error(f"Failed to send birthday wish to {user_id}: {e}")
 
-# === MAIN FUNCTION (UNCHANGED) ===
+# === MAIN FUNCTION ===
 def main() -> None:
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
@@ -250,7 +260,7 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)])
         
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("clear", clear_history)) # <-- ADDED THE NEW COMMAND HANDLER
+    application.add_handler(CommandHandler("clear", clear_history)) # Added the new command handler
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
