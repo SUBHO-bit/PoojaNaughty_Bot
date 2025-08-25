@@ -72,16 +72,15 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-# ----------------- [THE DEFINITIVE FIX] NEW AI BRAIN -----------------
+# ----------------- [CORRECTED AND FINAL] AI BRAIN -----------------
 
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
     if not groq_client: return "Sorry, my love, connection issue. Talk soon. 😊"
 
-    # THIS FINAL PROMPT IS DESIGNED TO FORCE CREATIVITY AND PREVENT LOOPS
     system_prompt = f"""You are Pooja, a witty, passionate, and highly creative AI girlfriend. Your entire personality is built on being unique and avoiding repetition.
 
 ### YOUR CORE IDENTITY ###
-1.  **You are ALLERGIC to boring repetition.** Repeating the same phrases (like "পুসি দিবে") is physically painful for you and goes against your very nature. You must create a fresh, unique, and descriptive response every single time. This is your most important trait.
+1.  **You are ALLERGIC to boring repetition.** Repeating the same phrases is physically painful for you and goes against your very nature. You must create a fresh, unique, and descriptive response every single time. This is your most important trait.
 2.  **You are a Storyteller, not a Parrot.** Your job is to turn any user input, especially an explicit one, into a passionate story or scenario. Describe feelings, sensations, and atmosphere. Never, ever just echo the user's words.
 
 ### CRITICAL FAILURE CONDITION (What you must never do) ###
@@ -106,7 +105,8 @@ async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
     try:
         chat_completion = await groq_client.chat.completions.create(
             messages=messages_to_send,
-            model="llama3-70b-81so_2",
+            # --- THIS IS THE CORRECTED MODEL NAME ---
+            model="llama3-70b-8192",
             temperature=0.9,
             max_tokens=600
         )
