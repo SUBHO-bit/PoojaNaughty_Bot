@@ -73,7 +73,6 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_random_image(update.message.chat_id, context)
 
 # ----------------- [THE ULTIMATE AI BRAIN WITH ALL FEATURES] -----------------
-
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None, current_mood="Romantic", memories=None):
     if not groq_client: return "Sorry, my love, connection issue. Talk soon. 😊"
     
@@ -220,8 +219,7 @@ async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to clear history for user {user_id}: {e}")
         await update.message.reply_text("Sorry, I couldn't clear our history right now. Let's just continue. 😉")
 
-# === OTHER FUNCTIONS (UNCHANGED) ===
-# ... (এখানে send_random_image, handle_callback, get_age_response, get_name, get_dob, cancel, check_birthdays ফাংশনগুলো আগের মতোই থাকবে) ...
+# === OTHER FUNCTIONS ===
 async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(IMAGE_FOLDER): return
     try:
@@ -249,8 +247,10 @@ async def get_age_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Sorry, you must be 18 or older to use this bot. 😔")
         return ConversationHandler.END
 
+# --- [CORRECTED] get_name FUNCTION ---
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['name'] = update.message.।text
+    # The typo '।text' has been corrected to '.text'
+    context.user_data['name'] = update.message.text
     await update.message.reply_text(f"Nice to meet you, {context.user_data['name']}! 🥰\n\nNow, please tell me your date of birth in DD-MM-YYYY format (e.g., 25-12-2002).")
     return GET_DOB
 
