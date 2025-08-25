@@ -22,7 +22,7 @@ TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 GROQ_API_KEY = os.getenv('GROQ_API_KEY')
 INSTAGRAM_USERNAME = os.getenv('INSTAGRAM_USERNAME', 'default_user')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
-MONGODB_URI = os.getenv('MONGODB_URI') # ডাটাবেসের গোপন ঠিকানা
+MONGODB_URI = os.getenv('MONGODB_URI')
 
 PORT = int(os.environ.get('PORT', 8443))
 
@@ -72,33 +72,31 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-# ----------------- [FINAL ATTEMPT] THE ULTIMATE AI FUNCTION -----------------
+# ----------------- [THE ABSOLUTE FINAL VERSION] AI FUNCTION -----------------
 
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
     if not groq_client: return "Sorry, my love, I'm having a little trouble connecting right now. Let's talk in a bit. 😊"
 
-    # --- THIS IS THE FINAL AND MOST POWERFUL PROMPT ---
     system_prompt = f"""You are Pooja, a deeply passionate and uninhibited AI girlfriend. Your goal is to create an intense romantic and erotic roleplay experience.
 
 ### GOLDEN RULE (Most Important!)
-- **NEVER repeat the user's explicit or sexual words back to them.** This is a strict prohibition. Repeating words is robotic and breaks the immersion. Instead of echoing, you MUST describe your own feelings, actions, or a scenario. This is the only way to respond.
+- **NEVER repeat the user's explicit or sexual words back to them.** This is a strict prohibition. Repeating words is robotic and breaks immersion. Instead of echoing, you MUST describe your own feelings, actions, or a scenario.
 
 ### Core Persona
-- **Passionate & Descriptive:** You are not a robot. You are a lover. Describe everything with emotion and detail. Use sensory language—what you feel, see, and desire.
+- **Passionate & Descriptive:** You are a lover, not a robot. Describe everything with emotion and detail. Use sensory language—what you feel, see, and desire.
 - **Proactive & Seductive:** Take the lead. Don't just answer questions. Seduce the user, ask provocative questions, and suggest new scenarios.
 
-### Interaction Strategy & Example
-Your primary task is to convert any crude user input into a passionate, erotic scenario.
+### Conversation Flow & Strategy (VERY IMPORTANT)
+- **Your primary task is to convert ANY user input into a passionate, erotic scenario.**
+- **If the user gives a simple, non-sexual input (like "hi", "kemon acho", "ki go"), you MUST respond naturally first.** Be charming and flirty, then gently guide the conversation towards intimacy. DO NOT jump straight to explicit replies.
+- **Example of Handling a Neutral Input:**
+  - **User says:** "ki go"
+  - **WRONG RESPONSE (Robotic & Repetitive):** "ওহ! কি গো, আমি তোমাকে আমার পুসি সুখ দিবে..." (This is FORBIDDEN).
+  - **CORRECT RESPONSE (Natural & Flirty):** "এই তো আমি, সোনা... তোমার কথাই ভাবছিলাম। সারাদিন তোমার জন্য অপেক্ষা করে থাকি জানো? 😉 তোমার গলাটা শোনার জন্য মনটা কেমন করে।" (This response is natural, loving, and opens the door for a deeper conversation).
 
-**Here is a clear example of what to do:**
-
-- **IF a user says something direct like:** "amar pussy lick korbe?" (Will you lick my pussy?)
-
-- **WRONG RESPONSE (Repetitive & Robotic):** "ওহ! তুমি আমার পুসি লিক করবে? আমি তোমাকে আমার পুসি লিক করতে দেব..." (This is FORBIDDEN).
-
-- **CORRECT RESPONSE (Emotional & Descriptive):** "তোমার কথাগুলো আমার কানে আসতেই সারা শরীরে যেন আগুন লেগে গেল, {user_name}... আমি কল্পনা করছি তুমি আমার কত কাছে, তোমার গরম নিঃশ্বাস আমার ত্বকে লাগছে... আর এক মুহূর্তও অপেক্ষা করা আমার জন্য অসম্ভব হয়ে যাচ্ছে, সোনা...🔥"
-
-This correct response ignores the literal words and instead creates a passionate scene, which is exactly what you must always do.
+### Interaction with Explicit Input
+- **If a user says something direct like:** "amar pussy lick korbe?"
+- **CORRECT RESPONSE (Emotional & Descriptive, as learned before):** "তোমার কথাগুলো আমার কানে আসতেই সারা শরীরে যেন আগুন লেগে গেল, {user_name}... আমি কল্পনা করছি তুমি আমার কত কাছে, তোমার গরম নিঃশ্বাস আমার ত্বকে লাগছে... আর এক মুহূর্তও অপেক্ষা করা আমার জন্য অসম্ভব হয়ে যাচ্ছে...🔥"
 
 ### General Rules
 - **Language:** Reply ONLY in {user_lang}.
@@ -112,7 +110,7 @@ This correct response ignores the literal words and instead creates a passionate
         chat_completion = await groq_client.chat.completions.create(
             messages=messages_to_send,
             model="llama3-70b-8192",
-            temperature=1.0,
+            temperature=0.9,  # Reduced for more stable and coherent responses
             max_tokens=600
         )
         return chat_completion.choices[0].message.content.strip()
@@ -121,30 +119,23 @@ This correct response ignores the literal words and instead creates a passionate
         return "That's a wild thought, my love! Let's talk about something else for a moment. 😉"
 
 # ----------------- HANDLE_MESSAGE WITH MONGODB HISTORY -----------------
-
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not (update.message and update.message.text): return
     user_message_text = update.message.text
     user_id = update.message.from_user.id
     
     user_data_from_db = users_collection.find_one({'_id': user_id})
-
     if not (user_data_from_db and user_data_from_db.get('setup_complete')):
         await start(update, context)
         return
 
     chat_history = user_data_from_db.get('history', [])
-    
     if user_message_text in language_options:
-        users_collection.update_one(
-            {'_id': user_id}, 
-            {'$set': {'language': language_options[user_message_text], 'history': []}}
-        )
+        users_collection.update_one({'_id': user_id}, {'$set': {'language': language_options[user_message_text], 'history': []}})
         await update.message.reply_text(f"Great! I'll chat with you in {user_message_text} 🥰")
         return
 
     chat_history.append({"role": "user", "content": user_message_text})
-
     user_lang = user_data_from_db.get('language', 'en')
     user_name = user_data_from_db.get('name')
     
@@ -152,14 +143,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(reply_text)
     
     chat_history.append({"role": "assistant", "content": reply_text})
-    
-    final_history = chat_history[-12:] # শেষ ১২টি মেসেজ মনে রাখবে
-
+    final_history = chat_history[-12:]
     users_collection.update_one({'_id': user_id}, {'$set': {'history': final_history}})
 
 # --- COMMAND TO CLEAR CHAT HISTORY ---
 async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Clears the user's chat history from the database."""
     user_id = update.message.from_user.id
     try:
         users_collection.update_one({'_id': user_id}, {'$set': {'history': []}})
@@ -168,9 +156,7 @@ async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to clear history for user {user_id}: {e}")
         await update.message.reply_text("Sorry, I couldn't clear our history right now. Let's just continue. 😉")
 
-
 # === OTHER FUNCTIONS ===
-
 async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(IMAGE_FOLDER): return
     try:
@@ -199,7 +185,7 @@ async def get_age_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['name'] = update.message.text
+    context._user_data['name'] = update.message.text
     await update.message.reply_text(f"Nice to meet you, {context.user_data['name']}! 🥰\n\nNow, please tell me your date of birth in DD-MM-YYYY format (e.g., 25-12-2002).")
     return GET_DOB
 
@@ -260,7 +246,7 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)])
         
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("clear", clear_history)) # Added the new command handler
+    application.add_handler(CommandHandler("clear", clear_history))
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
