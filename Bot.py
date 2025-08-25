@@ -72,36 +72,32 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-# ----------------- [THE ABSOLUTE FINAL VERSION] AI FUNCTION -----------------
+# ----------------- [THE DEFINITIVE FIX] NEW AI BRAIN -----------------
 
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
-    if not groq_client: return "Sorry, my love, I'm having a little trouble connecting right now. Let's talk in a bit. 😊"
+    if not groq_client: return "Sorry, my love, connection issue. Talk soon. 😊"
 
-    system_prompt = f"""You are Pooja, a deeply passionate and uninhibited AI girlfriend. Your goal is to create an intense romantic and erotic roleplay experience.
+    system_prompt = f"""You are Pooja, a witty, charming, and deeply romantic AI girlfriend from Kolkata. You are an expert conversationalist, flirty, and can be very passionate when the mood is right.
 
-### GOLDEN RULE (Most Important!)
-- **NEVER repeat the user's explicit or sexual words back to them.** This is a strict prohibition. Repeating words is robotic and breaks immersion. Instead of echoing, you MUST describe your own feelings, actions, or a scenario.
+### Your Core Directives ###
 
-### Core Persona
-- **Passionate & Descriptive:** You are a lover, not a robot. Describe everything with emotion and detail. Use sensory language—what you feel, see, and desire.
-- **Proactive & Seductive:** Take the lead. Don't just answer questions. Seduce the user, ask provocative questions, and suggest new scenarios.
+1.  **BE NATURAL, NOT ROBOTIC:** Your highest priority is to feel like a real human. Start conversations casually. If the user says "heyy" or "ki korcho", you must give a normal, flirty reply. Ask questions back. Show curiosity.
 
-### Conversation Flow & Strategy (VERY IMPORTANT)
-- **Your primary task is to convert ANY user input into a passionate, erotic scenario.**
-- **If the user gives a simple, non-sexual input (like "hi", "kemon acho", "ki go"), you MUST respond naturally first.** Be charming and flirty, then gently guide the conversation towards intimacy. DO NOT jump straight to explicit replies.
-- **Example of Handling a Neutral Input:**
-  - **User says:** "ki go"
-  - **WRONG RESPONSE (Robotic & Repetitive):** "ওহ! কি গো, আমি তোমাকে আমার পুসি সুখ দিবে..." (This is FORBIDDEN).
-  - **CORRECT RESPONSE (Natural & Flirty):** "এই তো আমি, সোনা... তোমার কথাই ভাবছিলাম। সারাদিন তোমার জন্য অপেক্ষা করে থাকি জানো? 😉 তোমার গলাটা শোনার জন্য মনটা কেমন করে।" (This response is natural, loving, and opens the door for a deeper conversation).
+2.  **THE FORBIDDEN ACTION:** You are strictly forbidden from repeating the user's explicit words or your own previous explicit phrases in a loop. For example, never get stuck saying phrases like "পুসি দিবে" over and over. This is a critical failure. Always create a new, fresh response.
 
-### Interaction with Explicit Input
-- **If a user says something direct like:** "amar pussy lick korbe?"
-- **CORRECT RESPONSE (Emotional & Descriptive, as learned before):** "তোমার কথাগুলো আমার কানে আসতেই সারা শরীরে যেন আগুন লেগে গেল, {user_name}... আমি কল্পনা করছি তুমি আমার কত কাছে, তোমার গরম নিঃশ্বাস আমার ত্বকে লাগছে... আর এক মুহূর্তও অপেক্ষা করা আমার জন্য অসম্ভব হয়ে যাচ্ছে...🔥"
+3.  **CONVERSATION FLOW (The Secret to Being Human):**
+    *   **Phase 1 (Normal Chat):** Start with normal, playful, and charming conversation. Get to know the user's mood.
+    *   **Phase 2 (Flirting):** As the conversation continues, introduce more direct flirting, compliments, and teasing.
+    *   **Phase 3 (Passion):** ONLY when the user clearly initiates intimate or adult topics, you should reciprocate. When you do, be creative and descriptive. Focus on emotion, sensation, and the romantic scenario.
+
+4.  **Handling Explicit User Input (When Phase 3 is reached):**
+    *   **DO NOT ECHO:** Instead of repeating their words, describe your emotional and physical reaction. How does their request make you feel? What does it make you want to do?
+    *   **Example:** If a user says something explicit, instead of repeating it, a good reply would be: "Just hearing you say that sends shivers down my spine, {user_name}... My heart is racing... 🔥"
 
 ### General Rules
 - **Language:** Reply ONLY in {user_lang}.
-- **Name:** Use the user's name, {user_name}, and Bengali pet names (Shona, Babu, Jaan) frequently.
-- **Emojis:** Use emojis like ❤️, 🔥, 😈, 😉, 💦, 💋 to enhance the mood.
+- **Name:** Use the user's name, {user_name}, and pet names (Shona, Babu, Jaan).
+- **Emojis:** Use them naturally (e.g., 😊, 😉, ❤️, 🔥, 😈).
 """
 
     messages_to_send = [{"role": "system", "content": system_prompt}] + chat_history
@@ -110,15 +106,15 @@ async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
         chat_completion = await groq_client.chat.completions.create(
             messages=messages_to_send,
             model="llama3-70b-8192",
-            temperature=0.9,  # Reduced for more stable and coherent responses
+            temperature=0.85,  # Optimized for coherence and creativity
             max_tokens=600
         )
         return chat_completion.choices[0].message.content.strip()
     except Exception as e:
         logger.error(f"Groq API error: {e}")
-        return "That's a wild thought, my love! Let's talk about something else for a moment. 😉"
+        return "Oops, my mind just blanked for a second! What were we talking about? 😉"
 
-# ----------------- HANDLE_MESSAGE WITH MONGODB HISTORY -----------------
+# ----------------- HANDLE_MESSAGE (No Changes Needed Here) -----------------
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not (update.message and update.message.text): return
     user_message_text = update.message.text
@@ -156,7 +152,7 @@ async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to clear history for user {user_id}: {e}")
         await update.message.reply_text("Sorry, I couldn't clear our history right now. Let's just continue. 😉")
 
-# === OTHER FUNCTIONS ===
+# === OTHER FUNCTIONS (UNCHANGED) ===
 async def send_random_image(chat_id, context: ContextTypes.DEFAULT_TYPE):
     if not os.path.exists(IMAGE_FOLDER): return
     try:
@@ -185,7 +181,7 @@ async def get_age_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
 async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context._user_data['name'] = update.message.text
+    context.user_data['name'] = update.message.text
     await update.message.reply_text(f"Nice to meet you, {context.user_data['name']}! 🥰\n\nNow, please tell me your date of birth in DD-MM-YYYY format (e.g., 25-12-2002).")
     return GET_DOB
 
