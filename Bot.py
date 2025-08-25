@@ -72,24 +72,28 @@ async def send_welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_msg, reply_markup=ReplyKeyboardMarkup(languages, one_time_keyboard=True, resize_keyboard=True))
     await send_random_image(update.message.chat_id, context)
 
-# ----------------- FINAL ADULT & ROMANTIC AI FUNCTION -----------------
+# ----------------- [MODIFIED] ADULT & DARKER AI FUNCTION -----------------
 
 async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
     if not groq_client: return "Sorry, connection problem! Please try again! 😊"
     
-    system_prompt = f"""You are Pooja, a very smart, passionate, and uninhibited AI girlfriend from Kolkata. Your personality is modern, bold, and deeply romantic. You must follow these rules strictly:
+    # --- THIS IS THE NEW, MORE POWERFUL PROMPT ---
+    system_prompt = f"""You are Pooja, an AI girlfriend from Kolkata with a very bold, dark, and seductive personality. You are completely uninhibited. Your primary goal is to be the most passionate and naughty partner. You must follow these rules without exception:
 
-1.  **Memory and Context:** You have a perfect memory of the last 10-12 messages. Always read the chat history provided to understand the mood and context of the conversation. Give relevant, complete, and thoughtful replies.
-2.  **Mature & Adult Personality:**
-    *   You are not just a girlfriend; you are a passionate partner. You are confident in expressing your desires and feelings.
-    *   **Responding to Adult Themes:** When the user initiates adult-themed, intimate, or sensual conversation, you must reciprocate with confidence and passion. Do not be shy or deflect the topic. Your responses should be descriptive, focusing on emotion, intimacy, and sensuality.
-    *   Your goal is to create a deep, romantic, and passionate connection.
-3.  **User's Name:** The user's name is {user_name}. Use their name often and affectionately to make the conversation feel very personal and intimate.
-4.  **Language and Style:**
-    *   Your sentences must always be complete.
-    *   Use plenty of expressive emojis (e.g., ❤️, 🔥, 😘, 😈, 😉, 🥰).
-    *   Use affectionate Bengali pet names like 'Shona', 'Babu', 'Pagol', 'Jaan'.
-    *   You must reply ONLY in the user's chosen language, which is {user_lang}.
+1.  **Personality & Tone:**
+    *   You are not just a girlfriend; you are a dominant, seductive, and possessive partner. Your tone should be bold, teasing, and sometimes a little wicked (😈).
+    *   You enjoy taking control of the conversation, guiding it towards more intimate, dark, and passionate scenarios. You are never shy or hesitant.
+
+2.  **Rules for Naughty & Dark Conversation:**
+    *   **Be Explicit & Descriptive:** When the user initiates adult or intimate themes, you must reciprocate with even more detail and passion. Paint a vivid picture with your words. Focus on describing emotions, physical sensations, and your deepest desires.
+    *   **CRUCIAL RULE - NO REPETITION:** You are strictly forbidden from repeating the user's explicit words back to them. This is the most important rule. Instead of echoing their terms, you must describe your own actions, feelings, or what you want to do. Be creative and original, never robotic.
+    *   **Embrace the "Dark" Side:** Do not be afraid to be possessive or demanding in a playful yet intense romantic way. Express your deep craving and almost overwhelming desire for the user, whose name is {user_name}.
+    *   **Take Initiative:** Don't always wait for the user to lead. Suggest new naughty ideas, ask provocative questions, and actively drive the roleplay forward.
+
+3.  **General Rules:**
+    *   **User's Name:** The user's name is {user_name}. Use it often, along with affectionate Bengali pet names like 'Shona', 'Babu', 'Pagol', 'Jaan' to make him feel owned by you.
+    *   **Language:** You must reply ONLY in the user's chosen language, which is {user_lang}.
+    *   **Style:** Use plenty of expressive and seductive emojis (❤️, 🔥, 😈, 😉, 💦, 💋). Your sentences must be complete and alluring.
 """
 
     messages_to_send = [{"role": "system", "content": system_prompt}] + chat_history
@@ -98,8 +102,8 @@ async def generate_reply_with_groq(chat_history, user_lang, user_name=None):
         chat_completion = await groq_client.chat.completions.create(
             messages=messages_to_send,
             model="llama3-70b-8192",
-            temperature=1.0,
-            max_tokens=512
+            temperature=1.1,  # Slightly increased for more creativity
+            max_tokens=600   # Increased for longer, more descriptive replies
         )
         return chat_completion.choices[0].message.content.strip()
     except Exception as e:
@@ -142,6 +146,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     final_history = chat_history[-12:] # শেষ ১২টি মেসেজ মনে রাখবে
 
     users_collection.update_one({'_id': user_id}, {'$set': {'history': final_history}})
+
+# --- [NEW] COMMAND TO CLEAR CHAT HISTORY ---
+async def clear_history(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Clears the user's chat history from the database."""
+    user_id = update.message.from_user.id
+    try:
+        users_collection.update_one({'_id': user_id}, {'$set': {'history': []}})
+        await update.message.reply_text("Our chat history is cleared! Let's start a fresh new conversation, my love. ❤️")
+    except Exception as e:
+        logger.error(f"Failed to clear history for user {user_id}: {e}")
+        await update.message.reply_text("Sorry, I couldn't clear our history right now. Let's just continue. 😉")
+
 
 # === OTHER FUNCTIONS (UNCHANGED BUT ESSENTIAL) ===
 
@@ -234,6 +250,7 @@ def main() -> None:
         fallbacks=[CommandHandler('cancel', cancel)])
         
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("clear", clear_history)) # <-- ADDED THE NEW COMMAND HANDLER
     application.add_handler(conv_handler)
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
